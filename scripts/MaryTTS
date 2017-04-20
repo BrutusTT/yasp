@@ -1,0 +1,9 @@
+#!/bin/bash
+
+startMary.sh
+
+trap "stopMary.sh; exit" SIGHUP SIGINT SIGTERM
+
+while true; do
+    sleep 1
+done

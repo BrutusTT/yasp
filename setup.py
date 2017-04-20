@@ -48,6 +48,9 @@ setup( name                 = 'YASP',
        """,
 
        scripts = [
-           'scripts/MSpeak'
+           'scripts/MSpeak',
+           'scripts/MaryTTS',
+           'scripts/startMary.sh',
+           'scripts/stopMary.sh',
        ]
      )
