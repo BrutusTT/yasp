@@ -10,11 +10,13 @@ from yasp.controller.marytts        import MaryTTS
 class FaceController(RpcController):
     """Class for controlling iCub face via its RPC port."""
 
+    SINGLETON       = True
     DISABLED_JOINTS = [1]
+    RPC_TARGET      = '/icub/face/rpc:i'
 
 
     def __init__(self):
-        self._rpc_client, self._port_name = self._getClient("/icub/face/rpc:i")
+        self._rpc_client, self._port_name = self._getClient(self.RPC_TARGET)
         self.joint_limits = self._load_joint_limits()
         self.expressions  = self._load_expressions()
         self._setSpeed()
@@ -50,6 +52,15 @@ class FaceController(RpcController):
                  'emotionx': [0.25, -50,  34,   0,   1, 16],
                 }
 
+
+    def isConnected(self):
+        return yarp.Network.isConnected(self._port_name, self.RPC_TARGET)
+
+
+    def reconnect(self):
+        if yarp.Network.exists(self.RPC_TARGET):
+            return self._rpc_client.addOutput(self.RPC_TARGET)
+        
 
     def setPosition(self, joint, pos):
         if joint in FaceController.DISABLED_JOINTS:

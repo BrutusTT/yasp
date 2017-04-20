@@ -10,6 +10,7 @@ import urllib
 
 if sys.version_info[0] == 3:
     import io
+    import urllib.request
 
 else:
     import StringIO
