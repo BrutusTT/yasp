@@ -24,12 +24,16 @@ import wave
 class MaryTTS(object):
 
 
-    def __init__(self):
-        self.speed       = 0.9
-        self.chunk       = 1024                                 # define stream chunk
-        self.locale      = 'en_GB' # 'de'
-        self.voice       = 'dfki-poppy' # 'bits3'
-        self.process_url = 'http://127.0.0.1:59125/process'
+    def __init__(self,  speed   = 0.9, 
+                        locale  = 'en_GB', 
+                        voice   = 'dfki-poppy', 
+                        ip      = '127.0.0.1',
+                        port    = 59125 ):
+        self.chunk       = 1024                                 # define stream chunk size
+        self.speed       = speed
+        self.locale      = locale               
+        self.voice       = voice
+        self.process_url = 'http://%s:%s/process' % (ip, port)
 
 
     def getData(self, values):

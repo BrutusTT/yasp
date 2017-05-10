@@ -68,11 +68,14 @@ class MSpeak(BaseModule):
     def configure(self, rf):
         BaseModule.configure(self, rf)
 
-        self.tts  = MaryTTS()
-        self.face = FaceController()
+        m_speed   = 0.9             if not rf.check('speed')     else rf.find('speed').asDouble()
+        m_locale  = 'en_GB'         if not rf.check('locale')    else rf.find('locale').toString()
+        m_voice   = 'dfki-poppy'    if not rf.check('voice')     else rf.find('voice').toString()
+        m_ip      = '127.0.0.1'     if not rf.check('mary_ip')   else rf.find('mary_ip').toString()
+        m_port    = 59125           if not rf.check('mary_port') else rf.find('mary_port').asInt()
 
-        # configure stuff
-#        rf.get('speed')
+        self.tts  = MaryTTS(m_speed, m_locale, m_voice, m_ip, m_port)
+        self.face = FaceController()
 
         return True
 
@@ -99,21 +102,21 @@ class MSpeak(BaseModule):
                 self.data      = self.tts.separateRealisedDurations(self.durations)
                 thread_speech  = threading.Thread(target = self.speak)
                 thread_motion  = threading.Thread(target = self.move)
-        
+
                 # start both threads
                 print("start say_proc")
                 thread_speech.start()
-        
+
                 print("motion_proc")
                 thread_motion.start()
-                
+
                 total_time = 0.0
                 for x in self.data:
                     total_time += float(x[0]) / self.tts.speed
-             
+
                 print('total time ', total_time)
                 time.sleep(total_time)
- 
+
             else:
                 time.sleep(0.1)
 
