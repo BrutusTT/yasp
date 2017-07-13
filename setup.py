@@ -42,6 +42,8 @@ setup( name                 = 'YASP',
        install_requires     = [
            'setuptools',
            # -*- Extra requirements: -*-
+           'numpy',
+           'pyaudio'
        ],
        entry_points         = """
        # -*- Entry points: -*-
