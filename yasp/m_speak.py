@@ -1,10 +1,12 @@
 from __future__ import print_function
 import threading
 import time
+import yarp
 
 from yasp.base_module                   import BaseModule
 from yasp.controller.marytts            import MaryTTS
 from yasp.controller.face_controller    import FaceController
+
 
 pho2mou = {  #       J    E      L     U     R     D
             'A':    [.2,   .9,   .5,    0,   .5,    1  ],
@@ -60,9 +62,25 @@ class MSpeak(BaseModule):
         
               # Text
               # Message: String
-              ('input',  'text',              'buffered'),
+              ('input',   'text',              'buffered'),
+              ('output',  'led',               'buffered'),
               
              ]
+    
+    LED_OUT = '/icub/face/raw/in'
+
+    LED_MAP = { 1 : 1,
+                2 : 2,
+                3 : 8,
+                4 : 4,
+                5 : 16,
+                6 : 32 }
+
+    LED_LVL = [ [3],
+                [3,2],
+                [4],
+                [4,5,2],
+              ]
 
 
     def configure(self, rf):
@@ -73,14 +91,23 @@ class MSpeak(BaseModule):
         m_voice   = 'dfki-poppy'    if not rf.check('voice')     else rf.find('voice').toString()
         m_ip      = '127.0.0.1'     if not rf.check('mary_ip')   else rf.find('mary_ip').toString()
         m_port    = 59125           if not rf.check('mary_port') else rf.find('mary_port').asInt()
+        m_sync    = True            if not rf.check('port_sync') else False
+
 
         self.tts  = MaryTTS(m_speed, m_locale, m_voice, m_ip, m_port)
         self.face = FaceController()
 
+        self.port_sync = m_sync
         return True
+
 
     
     def updateModule(self):
+        
+        # keep sync
+        if self.port_sync:
+            if not yarp.Network.isConnected(self.outputPort['led'].getName(), self.LED_OUT):
+                yarp.Network.connect(self.outputPort['led'].getName(), self.LED_OUT)
 
         bottle = self.inputPort['text'].read()
 
@@ -128,10 +155,18 @@ class MSpeak(BaseModule):
     def move(self):
         print('repeat after me: ')
         for x in [row for row in self.data if len(row) > 2]:
-            start  = time.time()
+            start   = time.time()
+            pattern = pho2mou.get(x[2], [])
 
-            for idx, percent in enumerate(pho2mou.get(x[2], [])):
+            for idx, percent in enumerate(pattern):
                 self.face.setPercentage(idx, percent)
+
+            if pattern:
+                level = 2           if pattern[3] + pattern[5] > 1.00 else 0
+                level = level + 1   if pattern[2] + pattern[4] > 0.75 else level
+
+                
+                self.setLED(level)
 
             print(x[2], x[0])
 
@@ -141,8 +176,34 @@ class MSpeak(BaseModule):
                 time.sleep(diff)
 
         self.face.setExpression('neutral')
+        self.setLED(0)
 
 
+    def setLED(self, level):
+        print ("blub", level)
+
+        # Mapping from openness to LEDs
+        leds = self.LED_LVL[level]
+        print (leds)
+
+        value = self.activatedLEDs(leds)
+        print (value)
+
+        # create message and send it        
+        bottle = self.outputPort['led'].prepare()
+        bottle.clear()
+        bottle.addString("M%.2X" % value)
+        self.outputPort['led'].write()
+
+
+    def activatedLEDs(self, _list):
+        
+        value = 0
+        for _, led_idx in enumerate(_list):
+            value += self.LED_MAP[led_idx]
+        return value
+
+    
     def respond(self, cmd, reply):
 
         success = False
