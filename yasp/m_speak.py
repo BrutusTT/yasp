@@ -1,3 +1,20 @@
+####################################################################################################
+#    Copyright (C) 2016-2017 by Ingo Keller                                                        #
+#    <brutusthetschiepel@gmail.com>                                                                #
+#                                                                                                  #
+#    This file is part of YASP (Yet Another Speech Package).                                       #
+#                                                                                                  #
+#    YASP is free software: you can redistribute it and/or modify it under the terms of the        #
+#    GNU Affero General Public License as published by the Free Software Foundation, either        #
+#    version 3 of the License, or (at your option) any later version.                              #
+#                                                                                                  #
+#    YASP is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;             #
+#    without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.     #
+#    See the GNU Affero General Public License for more details.                                   #
+#                                                                                                  #
+#    You should have received a copy of the GNU Affero General Public License                      #
+#    along with YASP.  If not, see <http://www.gnu.org/licenses/>.                                 #
+####################################################################################################
 from __future__ import print_function
 import threading
 import time
@@ -58,17 +75,19 @@ class MSpeak(BaseModule):
     AUTHORS    = ( ('Ingo Keller', 'brutusthetschiepel@gmail.com'), ) 
     ENABLE_RPC = True
 
-    PORTS = [
-        
+    PORTS = [        
               # Text
               # Message: String
               ('input',   'text',              'buffered'),
-              ('output',  'led',               'buffered'),
               
+              # 'M%.2X'
+              # Message: String
+              ('output',  'led',               'buffered'), 
              ]
     
     LED_OUT = '/icub/face/raw/in'
 
+    # Big thanks to Ana Tanevska for figuring out the addressing of the LEDs
     LED_MAP = { 1 : 1,
                 2 : 2,
                 3 : 8,
@@ -91,8 +110,7 @@ class MSpeak(BaseModule):
         m_voice   = 'dfki-poppy'    if not rf.check('voice')     else rf.find('voice').toString()
         m_ip      = '127.0.0.1'     if not rf.check('mary_ip')   else rf.find('mary_ip').toString()
         m_port    = 59125           if not rf.check('mary_port') else rf.find('mary_port').asInt()
-        m_sync    = True            if not rf.check('port_sync') else False
-
+        m_sync    = True            if not rf.check('disable_port_sync') else False
 
         self.tts  = MaryTTS(m_speed, m_locale, m_voice, m_ip, m_port)
         self.face = FaceController()
@@ -100,11 +118,10 @@ class MSpeak(BaseModule):
         self.port_sync = m_sync
         return True
 
-
     
     def updateModule(self):
         
-        # keep sync
+        # keep ports in sync
         if self.port_sync:
             if not yarp.Network.isConnected(self.outputPort['led'].getName(), self.LED_OUT):
                 yarp.Network.connect(self.outputPort['led'].getName(), self.LED_OUT)
@@ -118,6 +135,7 @@ class MSpeak(BaseModule):
 
 
     def onText(self, text):
+        """ React to incoming text messages. Gets called during the update() method."""
         assert isinstance(text, type(''))
 
         for say in text.split('.'):
@@ -149,11 +167,15 @@ class MSpeak(BaseModule):
 
 
     def speak(self):
+        """ Perform the speech part of the lip synchronization."""
         self.tts.play(self.wave)
 
 
     def move(self):
+        """ Perform the mouth move part of the lip synchronization."""
+
         print('repeat after me: ')
+        
         for x in [row for row in self.data if len(row) > 2]:
             start   = time.time()
             pattern = pho2mou.get(x[2], [])
@@ -165,29 +187,28 @@ class MSpeak(BaseModule):
                 level = 2           if pattern[3] + pattern[5] > 1.00 else 0
                 level = level + 1   if pattern[2] + pattern[4] > 0.75 else level
 
-                
                 self.setLED(level)
-
-            print(x[2], x[0])
 
             x[0] = x[0] * self.tts.speed 
             diff = x[0] - (time.time() - start)
             if diff > 0:
                 time.sleep(diff)
 
+        # reset to a neutral position after a speech act
         self.face.setExpression('neutral')
         self.setLED(0)
 
 
     def setLED(self, level):
-        print ("blub", level)
+        """ Set the LEDs through the face raw port. """
 
-        # Mapping from openness to LEDs
+        # mapping from openness to LEDs
         leds = self.LED_LVL[level]
-        print (leds)
 
-        value = self.activatedLEDs(leds)
-        print (value)
+        # calculate the final value for the LED setting
+        value = 0
+        for _, led_idx in enumerate(leds):
+            value += self.LED_MAP[led_idx]
 
         # create message and send it        
         bottle = self.outputPort['led'].prepare()
@@ -196,14 +217,6 @@ class MSpeak(BaseModule):
         self.outputPort['led'].write()
 
 
-    def activatedLEDs(self, _list):
-        
-        value = 0
-        for _, led_idx in enumerate(_list):
-            value += self.LED_MAP[led_idx]
-        return value
-
-    
     def respond(self, cmd, reply):
 
         success = False

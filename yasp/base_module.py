@@ -1,5 +1,5 @@
 ####################################################################################################
-#    Copyright (C) 2016 by Ingo Keller                                                             #
+#    Copyright (C) 2016-2017 by Ingo Keller                                                        #
 #    <brutusthetschiepel@gmail.com>                                                                #
 #                                                                                                  #
 #    This file is part of YASP (Yet Another Speech Package).                                       #
