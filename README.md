@@ -47,14 +47,14 @@ Parameters:
 
 	--speed				- Speed of the voice given with a float (slower < 1.0 < faster)
 	--locale			- Language for the voice (Default: en_GB)
-	--voice				- voice name as given by the demo website dropdown (Default: )
+	--voice				- voice name as given by the demo website dropdown (Default: dfki-poppy)
 	--mary_ip			- IP Address for MaryTTS-Server (Default: 127.0.0.1)
 	--mary_port			- Port for the MaryTTS-Server (Default: 59125)
 	--disable_port_sync	- If given the LED port will not be automatically reconnected to the iCub default face port
 
 Example:
 
-    $ MSpeak --mary_ip 10.0.0.1 --voice 
+    $ MSpeak --mary_ip 10.0.0.1 --voice dfki-poppy-hsmm
 
 
 Happy hacking!
