@@ -83,6 +83,8 @@ class MSpeak(BaseModule):
               # 'M%.2X'
               # Message: String
               ('output',  'led',               'buffered'), 
+              ('output',  'isSpeaking',        'buffered'), 
+              ('output',  'speaksUntil',       'buffered'), 
              ]
     
     LED_OUT = '/icub/face/raw/in'
@@ -138,6 +140,12 @@ class MSpeak(BaseModule):
         """ React to incoming text messages. Gets called during the update() method."""
         assert isinstance(text, type(''))
 
+        # create trigger message and send it        
+        bottle = self.outputPort['isSpeaking'].prepare()
+        bottle.clear()
+        bottle.addInt(1)
+        self.outputPort['isSpeaking'].write()
+
         for say in text.split('.'):
             
             if say:
@@ -159,11 +167,23 @@ class MSpeak(BaseModule):
                 for x in self.data:
                     total_time += float(x[0]) / self.tts.speed
 
+                # output speaking ETA
+                bottle = self.outputPort['speaksUntil'].prepare()
+                bottle.clear()
+                bottle.addDouble(time.time() + total_time )
+                self.outputPort['speaksUntil'].write()
+
                 print('total time ', total_time)
                 time.sleep(total_time)
 
             else:
                 time.sleep(0.1)
+
+        # create trigger message and send it        
+        bottle = self.outputPort['isSpeaking'].prepare()
+        bottle.clear()
+        bottle.addInt(0)
+        self.outputPort['isSpeaking'].write()
 
 
     def speak(self):
