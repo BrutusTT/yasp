@@ -123,14 +123,15 @@ class MSpeak(BaseModule):
     
     def updateModule(self):
         
-        # keep ports in sync
-        if self.port_sync:
-            if not yarp.Network.isConnected(self.outputPort['led'].getName(), self.LED_OUT):
-                yarp.Network.connect(self.outputPort['led'].getName(), self.LED_OUT)
-
         bottle = self.inputPort['text'].read()
 
         if bottle:
+
+            # keep ports in sync
+            if self.port_sync:
+                if not yarp.Network.isConnected(self.outputPort['led'].getName(), self.LED_OUT):
+                    yarp.Network.connect(self.outputPort['led'].getName(), self.LED_OUT)
+
             self.onText(bottle.toString())
 
         return True
@@ -216,7 +217,7 @@ class MSpeak(BaseModule):
 
         # reset to a neutral position after a speech act
         self.face.setExpression('neutral')
-        self.setLED(0)
+        self.setLED(1)
 
 
     def setLED(self, level):
