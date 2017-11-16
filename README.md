@@ -32,9 +32,11 @@ Additional dependencies:
     python setup.py install
 
 
+You can find a more detailed explanation in [doc/step_by_step_install.md](doc/step_by_step_install.md)
+
 ## Running YASP Module
 
-Before the MSpeak module can be used the MaryTTS needs to be started. YASP provides basic start/stop scripts.
+Before the MSpeak module can be used the MaryTTS needs to be started. YASP provides basic start/stop scripts in case you run MaryTTS and MSpeak on the same machine. For manual start of MaryTTS just navigate to the MaryTTS repository folder and run "./marytts" from there.
 
 	$ startMary.sh
 	$ stopMary.sh
